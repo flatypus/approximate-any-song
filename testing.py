@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from pydub import AudioSegment
 import numpy as np
 import os
@@ -11,7 +12,16 @@ song_len = len(song)
 
 sfx_files = os.listdir(sfx_path)
 names = [f"{sfx_path}{file}" for file in sfx_files]
-files = [AudioSegment.from_file(name) for name in names]
+
+print("Loading sfx:")
+
+files = []
+with ThreadPoolExecutor(max_workers=10) as executor:
+    futures = []
+    for name in names:
+        futures.append(executor.submit(AudioSegment.from_file, name))
+    for future in futures:
+        files.append(future.result())
 
 
 def mse(song1, song2):
@@ -55,4 +65,4 @@ for i in range(10000):
     print(f"Run: {i}: best: {best}")
     base_song = construct(base_song, *best[1])
 
-base_song.export("approximation" + target_path)
+base_song.export("approximation-" + target_path)
